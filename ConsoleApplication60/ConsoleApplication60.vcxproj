@@ -139,7 +139,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ConsoleApplication60.cpp" />
+    <ClCompile Include="surface.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="cord.txt" />
