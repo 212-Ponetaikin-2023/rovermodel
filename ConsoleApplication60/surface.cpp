@@ -1,6 +1,7 @@
 ﻿#define step 0.25
 #define MAX_ELEM_BUMP 10
 #define MAX_ELEM_STON 7
+#define MAX_ELEM_LOGS 5
 
 #include <iostream>
 #include <stdlib.h>
@@ -17,10 +18,6 @@ double povorot(double x, double x_0, double y, double y_0, double angle, bool fl
     if (flag == true) return sqr((x - x_0) * cos(angle) - (y - y_0) * sin(angle));
     if (flag == false) return sqr((x - x_0) * sin(angle) + (y - y_0) * cos(angle));
 }
-
-class surface {
-
-};
 
 class Gaussyan {
 private:
@@ -50,6 +47,66 @@ public:
 stone::stone(double x, double y, double r) {
     x_0 = x; y_0 = y; R = r;
 }
+
+class logs {
+private:
+    double x1, y1, x2, y2, R;
+public:
+    logs(double x1_ = 0, double y1_ = 0, double x2_ = 0, double y2_ = 0, double Rad = 0);
+    double z_log(double x, double y);
+};
+
+logs::logs(double x1_, double y1_, double x2_, double y2_, double Rad) {
+    x1 = x1_; x2 = x2_; y1 = y1_; y2 = y2_; R = Rad;
+}
+
+double FirstCordofOrtVtr(double a, double b, double R) {
+    return (R * b) / sqrt(sqr(a) + sqr(b));
+}
+
+double SecondCordofOrtVtr(double a, double b, double firstCord) {
+    return -(a * firstCord / b);
+}
+
+int sgn(double x) {
+    if (x > 0) return 1;
+    else if (x == 0) return 0;
+    else return -1;
+}
+
+double logs::z_log(double x, double y) {
+    double a, b, c, d, value1, value2, value3, value4, z_value;
+    int sgnvalue1, sgnvalue2, sgnvalue3, sgnvalue4;
+    double u, v;
+
+    a = x2 - x1;
+    b = y2 - y1;
+    c = FirstCordofOrtVtr(a, b, R);
+    d = SecondCordofOrtVtr(a, b, c);
+    value1 = b * x - a * y - b * (x1 + c) + a * (y1 + d);
+    value2 = b * x - a * y - b * (x1 - c) + a * (y1 - d);
+    value3 = d * x - c * y + c * y1 - d * x1;
+    value4 = d * x - c * y + c * y2 - d * x2;
+    sgnvalue1 = sgn(value1);
+    sgnvalue2 = sgn(value2);
+    sgnvalue3 = sgn(value3);
+    sgnvalue4 = sgn(value4);
+    if (abs(sgnvalue1 + sgnvalue2) > 1 || abs(sgnvalue3 + sgnvalue4) > 1) return 0;
+    else {
+        u = fabs(b * x - a * y - b * (x1 + c) + a * (y1 + d)) / sqrt(sqr(a) + sqr(b));
+        v = fabs(b * x - a * y - b * (x1 - c) + a * (y1 - d)) / sqrt(sqr(a) + sqr(b));
+        return sqrt(u * v);
+    }
+}
+
+/*class surface {
+private:
+    Gaussyan bump[MAX_ELEM_BUMP];
+    stone hSphere[MAX_ELEM_STON];
+    logs hLogs[MAX_ELEM_LOGS];
+public:
+    surface(Gaussyan bump[], stone hSphere[], logs hLogs[]);
+};*/
 
 double GetRandom(double min, double max)
 {
@@ -82,7 +139,19 @@ void fill_stones(int len, int wid, stone hSphere[]) {
     }
 }
 
-void print_cord(ofstream& file, int len, int wid, Gaussyan bump[], stone hSphere[]) {
+void fill_logs(int len, int wid, logs hLogs[]) {
+    double x1, y1, x2, y2, r;
+    for (int i = 0; i < MAX_ELEM_LOGS; i++) {
+        x1 = GetRandom(len / 10, len * 9 / 10);
+        x2 = GetRandom(len / 10, len * 9 / 10);
+        y1 = GetRandom(wid / 10, wid * 9 / 10);
+        y2 = GetRandom(wid / 10, wid * 9 / 10);
+        r = GetRandom(1, 4);
+        hLogs[i] = logs(x1, y1, x2, y2, r);
+    }
+}
+
+void print_cord(ofstream& file, int len, int wid, Gaussyan bump[], stone hSphere[], logs hLogs[]) {
     double x, y, sum_z;
     for (double i = 0; i < len / step; i++) {
         x = i * step;
@@ -95,6 +164,9 @@ void print_cord(ofstream& file, int len, int wid, Gaussyan bump[], stone hSphere
             for (int k = 0; k < MAX_ELEM_STON; k++) {
                 sum_z += hSphere[k].z_stone(x, y);
             }
+            for (int k = 0; k < MAX_ELEM_LOGS; k++) {
+                sum_z += hLogs[k].z_log(x, y);
+            }
             file << x << ' ' << y << ' ' << sum_z << '\n';
         }
     }
@@ -106,13 +178,15 @@ int main()
     srand(time(NULL));
     Gaussyan bump[MAX_ELEM_BUMP];
     stone hSphere[MAX_ELEM_STON];
+    logs hLogs[MAX_ELEM_LOGS];
     ofstream file;
     file.open("cord.txt");
     cin >> len >> wid;
     fill_bumps(len, wid, bump);
     fill_stones(len, wid, hSphere);
+    fill_logs(len, wid, hLogs);
     if (file.is_open()) {
-        print_cord(file, len, wid, bump, hSphere);
+        print_cord(file, len, wid, bump, hSphere, hLogs);
     }
     file.close();
     return 0;
