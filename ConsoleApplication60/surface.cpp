@@ -1,19 +1,16 @@
 ﻿#define step 0.25
-#define MAX_ELEM_BUMP 10
-#define MAX_ELEM_STON 7
-#define MAX_ELEM_LOGS 5
 
 #include <iostream>
 #include <stdlib.h>
 #include <time.h>
 #include <cmath>
 #include <fstream>
-//#include <vector>
+#include <vector>
 using namespace std;
 
-unsigned int GLO_BUMPS = 7;
-unsigned int GLO_STONES = 7;
-unsigned int GLO_LOGS = 7;
+unsigned int GLO_BUMPS = 4;
+unsigned int GLO_STONES = 4;
+unsigned int GLO_LOGS = 4;
 
 double sqr(double t) {
     return t * t;
@@ -115,20 +112,22 @@ double logs::z_log(double x, double y) {
 
 class surface {
 private:
-    Gaussyan bump[MAX_ELEM_BUMP];
-    stone hSphere[MAX_ELEM_STON];
-    logs hLogs[MAX_ELEM_LOGS];
+    vector <Gaussyan> bumps;
+    vector <stone> hSpheres;
+    vector <logs> hLogs;
     int len, wid;
 public:
-    surface(ofstream& file, int length = 0, int width = 0);
-    void fill(int len, int wid, Gaussyan bump[], stone hSphere[], logs hLogs[]);
+    surface(int length = 0, int width = 0);
+    void fill();
+    bool addSpecialBump(double x, double y, double sgm_x, double sgm_y, double A, double angle_);
+    bool addSpecialStone(double x, double y, double r);
+    bool addSpecialLog(double x1, double y1, double x2, double y2, double R);
     void print_cord(ofstream& file, int len, int wid);
 };
 
-surface::surface(ofstream& file, int length, int width) {
+surface::surface(int length, int width) {
     len = length; wid = width;
-    fill(len, wid, bump, hSphere, hLogs);
-    print_cord(file, len, wid);
+    fill();
 }
 
 double GetRandom(double min, double max)
@@ -139,54 +138,82 @@ double GetRandom(double min, double max)
     return value;
 }
 
-void surface::fill(int len, int wid, Gaussyan bump[], stone hSphere[], logs hLogs[]) {
+void surface::fill() {
     double x_0, y_0, sg_x, sg_y, h, alpha;
     double x, y, R;
     double x1, y1, x2, y2, r;
-    for (int i = 0; i < MAX_ELEM_BUMP; i++) {
+    for (int i = 0; i < GLO_BUMPS; i++) {
         x_0 = GetRandom(len / 10, len * 9 / 10);
         y_0 = GetRandom(wid / 10, wid * 9 / 10);
         sg_x = GetRandom(1, 5);
         sg_y = GetRandom(1, 5);
         h = GetRandom(-8, 8);
         alpha = GetRandom(0, 3.1);
-        bump[i] = Gaussyan(x_0, y_0, sg_x, sg_y, h, alpha);
+        bumps.push_back(Gaussyan(x_0, y_0, sg_x, sg_y, h, alpha));
     }
-    for (int i = 0; i < MAX_ELEM_STON; i++) {
+    for (int i = 0; i < GLO_STONES; i++) {
         x = GetRandom(len / 10, len * 9 / 10);
         y = GetRandom(wid / 10, wid * 9 / 10);
-        R = GetRandom(1, 5);
-        hSphere[i] = stone(x, y, R);
+        R = GetRandom(1, 3);
+        hSpheres.push_back(stone(x, y, R));
     }
-    for (int i = 0; i < MAX_ELEM_LOGS; i++) {
+    for (int i = 0; i < GLO_LOGS; i++) {
         x1 = GetRandom(len / 10, len * 9 / 10);
         x2 = GetRandom(len / 10, len * 9 / 10);
         y1 = GetRandom(wid / 10, wid * 9 / 10);
         y2 = GetRandom(wid / 10, wid * 9 / 10);
-        r = GetRandom(1, 4);
-        hLogs[i] = logs(x1, y1, x2, y2, r);
+        r = GetRandom(1, 3);
+        hLogs.push_back(logs(x1, y1, x2, y2, r));
     }
 }
 
 void surface::print_cord(ofstream& file, int len, int wid) {
     double x, y, sum_z;
+    unsigned int rBumps, rStones, rLogs;
+    rBumps = bumps.size();
+    rStones = hSpheres.size();
+    rLogs = hLogs.size();
     for (double i = 0; i < len / step; i++) {
         x = i * step;
         for (double j = 0; j < wid / step; j++) {
             y = j * step;
             sum_z = 0;
-            for (int k = 0; k < MAX_ELEM_BUMP; k++) {
-                sum_z += bump[k].z_gauss(x, y);
+            for (int k = 0; k < rBumps; k++) {
+                sum_z += bumps[k].z_gauss(x, y);
             }
-            for (int k = 0; k < MAX_ELEM_STON; k++) {
-                sum_z += hSphere[k].z_stone(x, y);
+            for (int k = 0; k < rStones; k++) {
+                sum_z += hSpheres[k].z_stone(x, y);
             }
-            for (int k = 0; k < MAX_ELEM_LOGS; k++) {
+            for (int k = 0; k < rLogs; k++) {
                 sum_z += hLogs[k].z_log(x, y);
             }
             file << x << ' ' << y << ' ' << sum_z << '\n';
         }
     }
+}
+
+bool surface::addSpecialBump(double x, double y, double sgm_x, double sgm_y, double A, double angle_) {
+    if (x >= 0 && x <= 50 && y >= 0 && y <= 50) {
+        bumps.push_back(Gaussyan(x, y, sgm_x, sgm_y, A, angle_));
+        return true;
+    }
+    else return false;
+}
+
+bool surface::addSpecialStone(double x, double y, double r) {
+    if (x >= 0 && x <= 50 && y >= 0 && y <= 50) {
+        hSpheres.push_back(stone(x, y, r));
+        return true;
+    }
+    else return false;
+}
+
+bool surface::addSpecialLog(double x1, double y1, double x2, double y2, double R) {
+    if (x1 >= 0 && x1 <= 50 && y1 >= 0 && y1 <= 50 && x2 >= 0 && x2 <= 50 && y2 >= 0 && y2 <= 50) {
+        hLogs.push_back(logs(x1, y1, x2, y2, R));
+        return true;
+    }
+    else return false;
 }
 
 int main()
@@ -197,7 +224,9 @@ int main()
     file.open("cord.txt");
     cin >> len >> wid;
     if (file.is_open()) {
-        surface surf(file, len, wid);
+        surface surf(len, wid);
+        surf.addSpecialLog(10, 5, 10, 25, 4);
+        surf.print_cord(file, len, wid);
     }
     file.close();
     return 0;
