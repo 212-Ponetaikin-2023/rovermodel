@@ -8,7 +8,12 @@
 #include <time.h>
 #include <cmath>
 #include <fstream>
+//#include <vector>
 using namespace std;
+
+unsigned int GLO_BUMPS = 7;
+unsigned int GLO_STONES = 7;
+unsigned int GLO_LOGS = 7;
 
 double sqr(double t) {
     return t * t;
@@ -19,13 +24,19 @@ double povorot(double x, double x_0, double y, double y_0, double angle, bool fl
     if (flag == false) return sqr((x - x_0) * sin(angle) + (y - y_0) * cos(angle));
 }
 
-class Gaussyan {
+class Point {
+protected:
+    double x_0, y_0, z;
+};
+
+class Gaussyan : public Point{
 private:
-    double x_0, y_0, sigma_x, sigma_y, height, angle;
+    double sigma_x, sigma_y, height, angle;
 public:
     Gaussyan(double x = 0, double y = 0, double sgm_x = 1, double sgm_y = 1, double A = 0, double angle_ = 0);
     double z_gauss(double x, double y) {
-        return height * exp(-((povorot(x, x_0, y, y_0, angle, true) / (2 * sqr(sigma_x))) + (povorot(x, x_0, y, y_0, angle, false) / (2 * sqr(sigma_y)))));
+        z = height * exp(-((povorot(x, x_0, y, y_0, angle, true) / (2 * sqr(sigma_x))) + (povorot(x, x_0, y, y_0, angle, false) / (2 * sqr(sigma_y)))));
+        return z;
     }
 };
 
@@ -33,13 +44,16 @@ Gaussyan::Gaussyan(double x, double y, double sgm_x, double sgm_y, double A, dou
     x_0 = x; y_0 = y; sigma_x = sgm_x; sigma_y = sgm_y; height = A; angle = angle_;
 }
 
-class stone {
+class stone : public Point{
 private:
-    double x_0, y_0, R;
+    double R;
 public:
     stone(double x = 0, double y = 0, double r = 0);
     double z_stone(double x, double y) {
-        if ((sqr(x - x_0) + sqr(y - y_0)) < sqr(R)) return sqrt(sqr(R) - sqr(x - x_0) - sqr(y - y_0));
+        if ((sqr(x - x_0) + sqr(y - y_0)) < sqr(R)) {
+            z = sqrt(sqr(R) - sqr(x - x_0) - sqr(y - y_0));
+            return z;
+        }
         else return 0;
     }
 };
@@ -65,7 +79,7 @@ double FirstCordofOrtVtr(double a, double b, double R) {
 }
 
 double SecondCordofOrtVtr(double a, double b, double firstCord) {
-    return -(a * firstCord / b);
+    return - (a * firstCord / b);
 }
 
 int sgn(double x) {
@@ -99,14 +113,23 @@ double logs::z_log(double x, double y) {
     }
 }
 
-/*class surface {
+class surface {
 private:
     Gaussyan bump[MAX_ELEM_BUMP];
     stone hSphere[MAX_ELEM_STON];
     logs hLogs[MAX_ELEM_LOGS];
+    int len, wid;
 public:
-    surface(Gaussyan bump[], stone hSphere[], logs hLogs[]);
-};*/
+    surface(ofstream& file, int length = 0, int width = 0);
+    void fill(int len, int wid, Gaussyan bump[], stone hSphere[], logs hLogs[]);
+    void print_cord(ofstream& file, int len, int wid);
+};
+
+surface::surface(ofstream& file, int length, int width) {
+    len = length; wid = width;
+    fill(len, wid, bump, hSphere, hLogs);
+    print_cord(file, len, wid);
+}
 
 double GetRandom(double min, double max)
 {
@@ -116,31 +139,25 @@ double GetRandom(double min, double max)
     return value;
 }
 
-void fill_bumps(int len, int wid, Gaussyan bump[]) {
+void surface::fill(int len, int wid, Gaussyan bump[], stone hSphere[], logs hLogs[]) {
     double x_0, y_0, sg_x, sg_y, h, alpha;
+    double x, y, R;
+    double x1, y1, x2, y2, r;
     for (int i = 0; i < MAX_ELEM_BUMP; i++) {
         x_0 = GetRandom(len / 10, len * 9 / 10);
         y_0 = GetRandom(wid / 10, wid * 9 / 10);
         sg_x = GetRandom(1, 5);
         sg_y = GetRandom(1, 5);
-        h = GetRandom(-7, 15);
+        h = GetRandom(-8, 8);
         alpha = GetRandom(0, 3.1);
         bump[i] = Gaussyan(x_0, y_0, sg_x, sg_y, h, alpha);
     }
-}
-
-void fill_stones(int len, int wid, stone hSphere[]) {
-    double x, y, r;
     for (int i = 0; i < MAX_ELEM_STON; i++) {
         x = GetRandom(len / 10, len * 9 / 10);
         y = GetRandom(wid / 10, wid * 9 / 10);
-        r = GetRandom(1, 5);
-        hSphere[i] = stone(x, y, r);
+        R = GetRandom(1, 5);
+        hSphere[i] = stone(x, y, R);
     }
-}
-
-void fill_logs(int len, int wid, logs hLogs[]) {
-    double x1, y1, x2, y2, r;
     for (int i = 0; i < MAX_ELEM_LOGS; i++) {
         x1 = GetRandom(len / 10, len * 9 / 10);
         x2 = GetRandom(len / 10, len * 9 / 10);
@@ -151,7 +168,7 @@ void fill_logs(int len, int wid, logs hLogs[]) {
     }
 }
 
-void print_cord(ofstream& file, int len, int wid, Gaussyan bump[], stone hSphere[], logs hLogs[]) {
+void surface::print_cord(ofstream& file, int len, int wid) {
     double x, y, sum_z;
     for (double i = 0; i < len / step; i++) {
         x = i * step;
@@ -176,17 +193,11 @@ int main()
 {
     unsigned int len = 0, wid = 0;
     srand(time(NULL));
-    Gaussyan bump[MAX_ELEM_BUMP];
-    stone hSphere[MAX_ELEM_STON];
-    logs hLogs[MAX_ELEM_LOGS];
     ofstream file;
     file.open("cord.txt");
     cin >> len >> wid;
-    fill_bumps(len, wid, bump);
-    fill_stones(len, wid, hSphere);
-    fill_logs(len, wid, hLogs);
     if (file.is_open()) {
-        print_cord(file, len, wid, bump, hSphere, hLogs);
+        surface surf(file, len, wid);
     }
     file.close();
     return 0;
