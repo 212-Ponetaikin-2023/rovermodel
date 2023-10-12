@@ -321,15 +321,14 @@ public:
     void checkandfillBump(vector <double> massBump, string answer, ofstream& logControl) {
         time_t currentTime = time(0);
         int error = 0;
-        for (size_t i = 0; i < 6; i++) {
-            if (massBump[i] == NULL) {
-                logControl << "Get incorrect values of Gaussyan! ";
-                if (answer == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
-                else if (answer == "No") logControl << endl;
-                error = -1;
-                break;
-            }
+        
+        if (massBump.size() != 6) {
+            logControl << "Get incorrect values of Gaussyan! ";
+            if (answer == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
+            else if (answer == "No") logControl << endl;
+            error = -1;
         }
+        
         if (error == 0) {
             extraBumps.push_back(Gaussyan(massBump[0], massBump[1], massBump[2], massBump[3], massBump[4], massBump[5]));
             logControl << "Get correct values of Gaussyan! ";
@@ -341,15 +340,14 @@ public:
     void checkandfillStone(vector <double> massBump, string answer, ofstream& logControl) {
         time_t currentTime = time(0);
         int error = 0;
-        for (size_t i = 0; i < 3; i++) {
-            if (massBump[i] == NULL) {
-                logControl << "Get incorrect values of stone! ";
-                if (answer == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
-                else if (answer == "No") logControl << endl;
-                error = -1;
-                break;
-            }
+        
+        if (massBump.size() != 3) {
+            logControl << "Get incorrect values of stone! ";
+            if (answer == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
+            else if (answer == "No") logControl << endl;
+            error = -1;
         }
+
         if (error == 0) {
             extraStones.push_back(stone(massBump[0], massBump[1], massBump[2]));
             logControl << "Get correct values of stone! ";
@@ -361,15 +359,14 @@ public:
     void checkandfillLog(vector <double> massBump, string answer, ofstream& logControl) {
         time_t currentTime = time(0);
         int error = 0;
-        for (size_t i = 0; i < 5; i++) {
-            if (massBump[i] == NULL) {
-                logControl << "Get incorrect values of log! ";
-                if (answer == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
-                else if (answer == "No") logControl << endl;
-                error = -1;
-                break;
-            }
+
+        if (massBump.size() != 5) {
+            logControl << "Get incorrect values of log! ";
+            if (answer == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
+            else if (answer == "No") logControl << endl;
+            error = -1;
         }
+
         if (error == 0) {
             extraLogs.push_back(logs(massBump[0], massBump[1], massBump[2], massBump[3], massBump[4]));
             logControl << "Get correct values of log! ";
@@ -400,34 +397,48 @@ private:
 public:
     boundary(string filename = "config.txt");
     int read_configfile(string config);
-    void readFirstPartofCommandFile(ifstream& filecommand, ofstream& logBound);
+    int readFirstPartofCommandFile(ifstream& filecommand, ofstream& logBound);
     void readSecondPartofCommandFile(ifstream& filecommand, ofstream& logBound, ofstream& logControl);
 };
 
 boundary::boundary(string filename) {
-    int check;
+    int check, checkFirst;
     config = filename;
     check = read_configfile(config);
     
     if (check == 0) {
-        ifstream filecommand(answers.back());
         ofstream logBound;
         logBound.open(answers[1]);
-        readFirstPartofCommandFile(filecommand, logBound);
-        
-        ofstream logControl;
-        logControl.open(answers[2]);
-        if (logControl.is_open()) {
-            controller.fillUserDataofSurface(logControl, answers);
-            readSecondPartofCommandFile(filecommand, logBound, logControl);
-            controller.createSurface();
-            time_t currentTime = time(0);
-            logControl << "The field generation was successful! ";
-            if (answers[0] == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
-            else if (answers[0] == "No") logControl << endl;
-            logControl.close();
+        if (logBound.is_open()) {
+            ifstream filecommand(answers.back());
+            if (filecommand.is_open()) {
+                checkFirst = readFirstPartofCommandFile(filecommand, logBound);
+                if (checkFirst == 0) {
+                    ofstream logControl;
+                    logControl.open(answers[2]);
+                    if (logControl.is_open()) {
+                        controller.fillUserDataofSurface(logControl, answers);
+                        readSecondPartofCommandFile(filecommand, logBound, logControl);
+                        controller.createSurface();
+                        time_t currentTime = time(0);
+                        logControl << "The field generation was successful! ";
+                        if (answers[0] == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
+                        else if (answers[0] == "No") logControl << endl;
+                        logControl.close();
+                    }
+                    else {
+                        cout << "ERROR, incorrect name file of logs Control!" << endl;
+                    }
+                }
+            }
+            else {
+                cout << "ERROR, incorrect name of command file!" << endl;
+            }
+            logBound.close();
         }
-        logBound.close();
+        else {
+            cout << "ERROR, incorrect name file of logs Boundary!" << endl;
+        }
     }
 }
 
@@ -464,43 +475,41 @@ int boundary::read_configfile(string config) {
     return error;
 }
 
-void boundary::readFirstPartofCommandFile(ifstream& filecommand, ofstream& logBound) {
+int boundary::readFirstPartofCommandFile(ifstream& filecommand, ofstream& logBound) {
     string str;
     string startDelimiter = "[";
     string endDelimiter = "]";
     int j = 0, error = 0;
 
-    if (logBound.is_open()) {
-        while (getline(filecommand, str)) {
-            time_t currentTime = time(0);
-
-            regex pattern(patternsCommand[j]);
-            if (regex_match(str, pattern)) {    //проверка строки с шаблоном
-                if (j == 0) {
-                    j++;
-                    continue;
-                }
-                else {
-                    size_t startPos = str.find(startDelimiter);
-                    size_t endPos = str.find(endDelimiter);    //вычленение данных
-                    if (startPos != std::string::npos && endPos != std::string::npos && startPos < endPos) {
-                        std::string data = str.substr(startPos + startDelimiter.length(), endPos - startPos - startDelimiter.length());
-                        answers.push_back(data);    //данные пушатся в вектор
-                        logBound << "The {" << patternsCommand[j] << "} command was read succesfully! ";
-                        if (answers[0] == "Yes") logBound << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
-                        else if (answers[0] == "No") logBound << endl;
-                    }
-                }
+    while (getline(filecommand, str)) {
+        time_t currentTime = time(0);
+        regex pattern(patternsCommand[j]);
+        if (regex_match(str, pattern)) {    //проверка строки с шаблоном
+            if (j == 0) {
+                j++;
+                continue;
             }
             else {
-                logBound << "ERROR, mismatch of a string with a template, see this: " << patternsCommand[j] << endl;
-                error = -1;
-                break;
+                size_t startPos = str.find(startDelimiter);
+                size_t endPos = str.find(endDelimiter);    //вычленение данных
+                if (startPos != std::string::npos && endPos != std::string::npos && startPos < endPos) {
+                    std::string data = str.substr(startPos + startDelimiter.length(), endPos - startPos - startDelimiter.length());
+                    answers.push_back(data);    //данные пушатся в вектор
+                    logBound << "The {" << patternsCommand[j] << "} command was read succesfully! ";
+                    if (answers[0] == "Yes") logBound << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
+                    else if (answers[0] == "No") logBound << endl;
+                }
             }
-            j++;
-            if (j == 6) break;
         }
+        else {
+            logBound << "ERROR, mismatch of a string with a template, see this: " << patternsCommand[j] << endl;
+            return -1;
+            break;
+        }
+        j++;
+        if (j == 6) break;
     }
+    return 0;
 }
 
 void boundary::readSecondPartofCommandFile(ifstream& filecommand, ofstream& logBound, ofstream& logControl) {
@@ -511,15 +520,17 @@ void boundary::readSecondPartofCommandFile(ifstream& filecommand, ofstream& logB
     vector <double> mass2;
     vector <double> mass3;
     double num;
+    int flag;
     while (getline(filecommand, str)) {
         time_t currentTime = time(0);
         if (str == "Field calculation;") {
-            cout << "lets calculate!" << endl;
             break;
         }
+        flag = 0;
         for (unsigned int l = 0; l < patternsAddCommand.size(); l++) {
             regex pattern(patternsAddCommand[l]);
             if (regex_match(str, pattern)) {
+                flag = 1;
                 size_t startPos = str.find(startDelimiter);
                 size_t endPos = str.find(endDelimiter);    //вычленение данных
                 if (startPos != std::string::npos && endPos != std::string::npos && startPos < endPos) {
@@ -555,6 +566,11 @@ void boundary::readSecondPartofCommandFile(ifstream& filecommand, ofstream& logB
                     break;
                 }
             }
+        }
+        if (flag == 0) {
+            logBound << "This command is not correct: " << str;
+            if (answers[0] == "Yes") logBound << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
+            else if (answers[0] == "No") logBound << endl;
         }
     }
 }
