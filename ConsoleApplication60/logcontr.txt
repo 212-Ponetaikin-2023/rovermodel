@@ -1,0 +1,18 @@
+The length value is correct! Time: Thu Oct 12 16:52:32 2023
+
+The width value is correct! Time: Thu Oct 12 16:52:32 2023
+
+The Number of gaussyans value is correct! Time: Thu Oct 12 16:52:32 2023
+
+The Number of stones value is correct! Time: Thu Oct 12 16:52:32 2023
+
+The Number of logs value is correct! Time: Thu Oct 12 16:52:32 2023
+
+Get correct values of Gaussyan! Time: Thu Oct 12 16:52:32 2023
+
+Get correct values of stone! Time: Thu Oct 12 16:52:32 2023
+
+Get correct values of log! Time: Thu Oct 12 16:52:32 2023
+
+The field generation was successful!Time: Thu Oct 12 16:52:34 2023
+

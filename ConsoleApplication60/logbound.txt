@@ -1,0 +1,16 @@
+The {Length - .*;} command was read succesfully! Time: Thu Oct 12 16:52:32 2023
+
+The {Width - .*;} command was read succesfully! Time: Thu Oct 12 16:52:32 2023
+
+The {Number of gaussyans - .*;} command was read succesfully! Time: Thu Oct 12 16:52:32 2023
+
+The {Number of stones - .*;} command was read succesfully! Time: Thu Oct 12 16:52:32 2023
+
+The {Number of logs - .*;} command was read succesfully! Time: Thu Oct 12 16:52:32 2023
+
+The {Add gauss -.*;} command was read succesfully! Time: Thu Oct 12 16:52:32 2023
+
+The {Add stone -.*;} command was read succesfully! Time: Thu Oct 12 16:52:32 2023
+
+The {Add log -.*;} command was read succesfully! Time: Thu Oct 12 16:52:32 2023
+

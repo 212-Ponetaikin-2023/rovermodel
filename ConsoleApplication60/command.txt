@@ -1,0 +1,10 @@
+Field generation;
+Length - [50];
+Width - [50];
+Number of gaussyans - [4];
+Number of stones - [4];
+Number of logs - [4];
+Add gauss - [3.0,5.0,2.0,2.0,3.0,1.7];
+Add stone - [10,12,3];
+Add log - [7,10,7,20,3];
+Field calculation;
