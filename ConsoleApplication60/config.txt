@@ -2,3 +2,4 @@ Date recording - [Yes];
 Name of the logs file Boundary - [logbound.txt];
 Name of the logs file Control - [logcontr.txt];
 Name of the command file - [command.txt];
+Name of the rover command file - [rovercommand.txt];

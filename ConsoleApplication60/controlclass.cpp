@@ -9,14 +9,14 @@
 
     int control::fillUserDataofSurface(ofstream& logControl, vector<string> data) {
         time_t currentTime = time(0);
-        if (data[4] == "") {
+        if (data[5] == "") {
             logControl << "The length value is set by default! ";
             if (data[0] == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
             else if (data[0] == "No") logControl << endl;
         }
         else {
             try {
-                length = stoi(data[4]);
+                length = stoi(data[5]);
                 logControl << "The length value is correct! ";
                 if (data[0] == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
                 else if (data[0] == "No") logControl << endl;
@@ -27,14 +27,14 @@
                 else if (data[0] == "No") logControl << endl;
             }
         }
-        if (data[5] == "") {
+        if (data[6] == "") {
             logControl << "The width value is set by default! ";
             if (data[0] == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
             else if (data[0] == "No") logControl << endl;
         }
         else {
             try {
-                width = stoi(data[5]);
+                width = stoi(data[6]);
                 logControl << "The width value is correct! ";
                 if (data[0] == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
                 else if (data[0] == "No") logControl << endl;
@@ -45,14 +45,14 @@
                 else if (data[0] == "No") logControl << endl;
             }
         }
-        if (data[6] == "") {
+        if (data[7] == "") {
             logControl << "The Number of gaussyans is set by default! ";
             if (data[0] == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
             else if (data[0] == "No") logControl << endl;
         }
         else {
             try {
-                amountBumps = stoi(data[6]);
+                amountBumps = stoi(data[7]);
                 logControl << "The Number of gaussyans value is correct! ";
                 if (data[0] == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
                 else if (data[0] == "No") logControl << endl;
@@ -63,14 +63,14 @@
                 else if (data[0] == "No") logControl << endl;
             }
         }
-        if (data[7] == "") {
+        if (data[8] == "") {
             logControl << "The Number of stones is set by default! ";
             if (data[0] == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
             else if (data[0] == "No") logControl << endl;
         }
         else {
             try {
-                amountStones = stoi(data[7]);
+                amountStones = stoi(data[8]);
                 logControl << "The Number of stones value is correct! ";
                 if (data[0] == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
                 else if (data[0] == "No") logControl << endl;
@@ -81,14 +81,14 @@
                 else if (data[0] == "No") logControl << endl;
             }
         }
-        if (data[8] == "") {
+        if (data[9] == "") {
             logControl << "The Number of logs is set by default! ";
             if (data[0] == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
             else if (data[0] == "No") logControl << endl;
         }
         else {
             try {
-                amountLogs = stoi(data[8]);
+                amountLogs = stoi(data[9]);
                 logControl << "The Number of logs value is correct! ";
                 if (data[0] == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
                 else if (data[0] == "No") logControl << endl;
@@ -159,9 +159,53 @@
         }
     }
 
+    int control::notation_cords_rover(vector <double> cords, string answer, ofstream& logControl) {
+        time_t currentTime = time(0);
+        int check = 0;
+        int cols = width / step;
+        if (cords.size() == 4) {
+            if (cords[0] < length && cords[0] > 0 && cords[1] < width && cords[1] > 0 && cords[2] < length && cords[2] > 0 && cords[3] < width && cords[3] > 0) {
+                
+                process = processor(cords[0], cords[2], cords[1], cords[3]);
+                logControl << "Rover has created at [" << cords[0] << ", " << cords[1] << "] coordinates! ";
+                if (answer == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
+                else if (answer == "No") logControl << endl;
+            }
+            else {
+                logControl << "ERROR, These values of x and y aren't correct! ";
+                if (answer == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
+                else if (answer == "No") logControl << endl;
+            }
+        }
+        else {
+            logControl << "ERROR, if you want to create rover, you have to input 4 values! ";
+            if (answer == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
+            else if (answer == "No") logControl << endl;
+        }
+        return 0;
+    }
+
+    int control::StartRover(vector <string> commands, string answer, vector <string> patternsRover, ofstream& logControl) {
+        int cols = width / step;
+        process.building_road(overwritingPixels, cols);
+        return 0;
+    }
+
     void control::createSurface() {
         srand(time(NULL));
         terra = surface(length, width);
         terra.fill(amountBumps, amountStones, amountLogs);
-        terra.print_cord("cord.txt", length, width, extraBumps, extraStones, extraLogs);
+        const int rows = length / step; //проверка на нецелый шаг не забыть сделать
+        const int cols = width / step;
+        double** pixels = new double* [rows];
+        for (int l = 0; l < rows; l++) {
+            pixels[l] = new double[cols];
+        }
+        terra.print_cord("cord.txt", length, width, extraBumps, extraStones, extraLogs, pixels);
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                overwritingPixels.push_back(Point(i * step, j * step, pixels[i][j]));
+            }
+        }
+        for (int l = 0; l < rows; l++) delete[] pixels[l];
     }

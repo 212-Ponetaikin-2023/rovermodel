@@ -1,5 +1,6 @@
 #include "basicfuncs.h"
 #include "surfaceclass.h"
+#include "processor.h"
 
 class control {
 private:
@@ -8,7 +9,9 @@ private:
     unsigned int amountBumps;
     unsigned int amountStones;
     unsigned int amountLogs;
+    vector <Point> overwritingPixels;
     surface terra;
+    processor process;
     vector <Gaussyan> extraBumps;
     vector <stone> extraStones;
     vector <logs> extraLogs;
@@ -22,6 +25,10 @@ public:
     void checkandfillStone(vector <double> massBump, string answer, ofstream& logControl);
 
     void checkandfillLog(vector <double> massBump, string answer, ofstream& logControl);
+
+    int notation_cords_rover(vector <double> cords, string answer, ofstream& logControl);
+
+    int StartRover(vector <string> commands, string answer, vector <string> patternsRover, ofstream& logControl);
 
     void createSurface();
 };

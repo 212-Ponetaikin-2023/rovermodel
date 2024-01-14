@@ -9,7 +9,7 @@ boundary::boundary(string filename) {
         ofstream logBound;
         logBound.open(answers[1]);
         if (logBound.is_open()) {
-            ifstream filecommand(answers.back());
+            ifstream filecommand(answers[answers.size() - 2]);
             if (filecommand.is_open()) {
                 checkFirst = readFirstPartofCommandFile(filecommand, logBound);
                 if (checkFirst == 0) {
@@ -18,11 +18,19 @@ boundary::boundary(string filename) {
                     if (logControl.is_open()) {
                         controller.fillUserDataofSurface(logControl, answers);
                         readSecondPartofCommandFile(filecommand, logBound, logControl);
+                        
                         controller.createSurface();
                         time_t currentTime = time(0);
                         logControl << "The field generation was successful! ";
                         if (answers[0] == "Yes") logControl << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
                         else if (answers[0] == "No") logControl << endl;
+                        ifstream rovercommandfile(answers[4]);
+                        if (rovercommandfile.is_open()) {
+                            readRoverCommandFile(logBound, logControl, rovercommandfile);
+                        }
+                        else {
+                            cout << "ERROR, incorrect name file of rovercommands!" << endl;
+                        }
                         logControl.close();
                     }
                     else {
@@ -46,7 +54,6 @@ int boundary::read_configfile(string config) {
     string str;
     string startDelimiter = "[";
     string endDelimiter = "]";
-    //const int N_STR = 7;
     int error = 0;
     unsigned int i = 0;
     while (getline(fileconfig, str)) {
@@ -56,7 +63,7 @@ int boundary::read_configfile(string config) {
             break;
         }
         regex pattern(patternsConfig[i]);
-        if (regex_match(str, pattern)) {    //проверка строки с шаблоном
+        if (regex_search(str, pattern)) {    //проверка строки с шаблоном
             size_t startPos = str.find(startDelimiter);
             size_t endPos = str.find(endDelimiter);    //вычленение данных
             if (startPos != std::string::npos && endPos != std::string::npos && startPos < endPos) {
@@ -66,7 +73,7 @@ int boundary::read_configfile(string config) {
         }
         else {
             cout << "ERROR, mismatch of a string with a template, see this: " << patternsConfig[i] << endl;
-            error = -1; //
+            error = -1;
             break;
         }
         i++;
@@ -82,23 +89,30 @@ int boundary::readFirstPartofCommandFile(ifstream& filecommand, ofstream& logBou
 
     while (getline(filecommand, str)) {
         time_t currentTime = time(0);
-        regex pattern(patternsCommand[j]);
-        if (regex_match(str, pattern)) {    //проверка строки с шаблоном
-            if (j == 0) {
+        if (j == 0) {
+            if (str == "Field generation;") {
                 j++;
                 continue;
             }
             else {
-                size_t startPos = str.find(startDelimiter);
-                size_t endPos = str.find(endDelimiter);    //вычленение данных
-                if (startPos != std::string::npos && endPos != std::string::npos && startPos < endPos) {
-                    std::string data = str.substr(startPos + startDelimiter.length(), endPos - startPos - startDelimiter.length());
-                    answers.push_back(data);    //данные пушатся в вектор
-                    logBound << "The {" << patternsCommand[j] << "} command was read succesfully! ";
-                    if (answers[0] == "Yes") logBound << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
-                    else if (answers[0] == "No") logBound << endl;
-                }
+                logBound << "ERROR, mismatch of a string with a template, see this: " << patternsCommand[j] << " Yours: " << str << endl;
+                return -1;
+                break;
             }
+        }
+        regex pattern(patternsCommand[j]);
+        if (regex_search(str, pattern)) {    //проверка строки с шаблоном
+            
+            size_t startPos = str.find(startDelimiter);
+            size_t endPos = str.find(endDelimiter);    //вычленение данных
+            if (startPos != std::string::npos && endPos != std::string::npos && startPos < endPos) {
+                std::string data = str.substr(startPos + startDelimiter.length(), endPos - startPos - startDelimiter.length());
+                answers.push_back(data);    //данные пушатся в вектор
+                logBound << "The {" << patternsCommand[j] << "} command was read succesfully! ";
+                if (answers[0] == "Yes") logBound << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
+                else if (answers[0] == "No") logBound << endl;
+            }
+            
         }
         else {
             logBound << "ERROR, mismatch of a string with a template, see this: " << patternsCommand[j] << endl;
@@ -128,7 +142,7 @@ void boundary::readSecondPartofCommandFile(ifstream& filecommand, ofstream& logB
         flag = 0;
         for (unsigned int l = 0; l < patternsAddCommand.size(); l++) {
             regex pattern(patternsAddCommand[l]);
-            if (regex_match(str, pattern)) {
+            if (regex_search(str, pattern)) {
                 flag = 1;
                 size_t startPos = str.find(startDelimiter);
                 size_t endPos = str.find(endDelimiter);    //вычленение данных
@@ -172,4 +186,87 @@ void boundary::readSecondPartofCommandFile(ifstream& filecommand, ofstream& logB
             else if (answers[0] == "No") logBound << endl;
         }
     }
+}
+
+void boundary::readRoverCommandFile(ofstream& logBound, ofstream& logControl, ifstream& rovercommandfile) {
+    string str;
+    int i = 0;
+    int flag = 0;
+    int last_str_line = 3;
+    int check_start = 0;
+    double num;
+    vector <double> cords;
+    string startDelimiter = "[";
+    string endDelimiter = "]";
+    while (getline(rovercommandfile, str)) {
+        time_t currentTime = time(0);
+        if (i == 0) {
+            regex pattern(patternsRoverCommand[0]);
+            if (regex_search(str, pattern)) {
+                size_t startPos = str.find(startDelimiter);
+                size_t endPos = str.find(endDelimiter);    //вычленение данных
+                if (startPos != std::string::npos && endPos != std::string::npos && startPos < endPos) {
+                    std::string data = str.substr(startPos + startDelimiter.length(), endPos - startPos - startDelimiter.length());
+                    rovercommands.push_back(data);    //данные пушатся в вектор
+                    logBound << "The {" << patternsRoverCommand[0] << "} command was read succesfully! ";
+                    if (answers[0] == "Yes") logBound << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
+                    else if (answers[0] == "No") logBound << endl;
+                }
+                istringstream iss(rovercommands.back());
+                string token;
+                while (getline(iss, token, ',')) {
+                    num = std::stod(token);
+                    cords.push_back(num);
+                }
+                
+                i++;
+                continue;
+            }
+            else {
+                logBound << "This command is not correct: " << str << " see this: " << patternsRoverCommand[0] << " ";
+                if (answers[0] == "Yes") logBound << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
+                else if (answers[0] == "No") logBound << endl;
+                break;
+            }
+        }
+        else if (i == 1) {
+            regex pattern(patternsRoverCommand[1]);
+            if (regex_search(str, pattern)) {
+                size_t startPos = str.find(startDelimiter);
+                size_t endPos = str.find(endDelimiter);    //вычленение данных
+                if (startPos != std::string::npos && endPos != std::string::npos && startPos < endPos) {
+                    std::string data = str.substr(startPos + startDelimiter.length(), endPos - startPos - startDelimiter.length());
+                    rovercommands.push_back(data);    //данные пушатся в вектор
+                    logBound << "The {" << patternsRoverCommand[1] << "} command was read succesfully! ";
+                    if (answers[0] == "Yes") logBound << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
+                    else if (answers[0] == "No") logBound << endl;
+                }
+                istringstream iss(rovercommands.back());
+                string token;
+                while (getline(iss, token, ',')) {
+                    num = std::stod(token);
+                    cords.push_back(num);
+                }
+
+                i++;
+            }
+            else {
+                logBound << "This command is not correct: " << str << " see this: " << patternsRoverCommand[1] << " ";
+                if (answers[0] == "Yes") logBound << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
+                else if (answers[0] == "No") logBound << endl;
+                break;
+            }
+        }
+        else {
+            logBound << "This command is not correct: " << str << " see this: last command is " << patternsRoverCommand[1] << " ";
+            if (answers[0] == "Yes") logBound << "Time: " << std::asctime(std::localtime(&currentTime)) << endl;
+            else if (answers[0] == "No") logBound << endl;
+            break;
+        }
+        check_start = controller.notation_cords_rover(cords, answers[0], logControl);
+        if (check_start == -1) {
+            break;
+        }
+    }
+    controller.StartRover(rovercommands, answers[0], patternsRoverCommand, logControl);
 }

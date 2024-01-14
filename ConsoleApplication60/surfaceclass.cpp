@@ -41,11 +41,12 @@ void surface::fill(unsigned int GLO_BUMPS, unsigned int GLO_STONES, unsigned int
     }
 }
 
-void surface::print_cord(string fileCord, int len, int wid, vector <Gaussyan> ExtraBump, vector <stone> ExtraStone, vector <logs> ExtraLogs) {
+void surface::print_cord(string fileCord, int len, int wid, vector <Gaussyan> ExtraBump, vector <stone> ExtraStone, vector <logs> ExtraLogs, double **pixels) {
     ofstream file;
     file.open(fileCord);
     double x, y, sum_z;
     unsigned int rBumps, rStones, rLogs, extraRbumps, extraRstones, extraRlogs;
+    
     rBumps = bumps.size();
     rStones = hSpheres.size();
     rLogs = hLogs.size();
@@ -76,6 +77,7 @@ void surface::print_cord(string fileCord, int len, int wid, vector <Gaussyan> Ex
                 sum_z += ExtraLogs[k].z_log(x, y);
             }
             file << x << ' ' << y << ' ' << sum_z << '\n';
+            pixels[(int)i][(int)j] = sum_z;
         }
     }
     file.close();
